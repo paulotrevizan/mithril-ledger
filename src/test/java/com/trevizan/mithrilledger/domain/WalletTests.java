@@ -1,4 +1,4 @@
-package com.trevizan.mithrilledger.model;
+package com.trevizan.mithrilledger.domain;
 
 import com.trevizan.mithrilledger.exception.InsufficientBalanceException;
 

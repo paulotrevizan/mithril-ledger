@@ -1,4 +1,4 @@
-package com.trevizan.mithrilledger.model.converter;
+package com.trevizan.mithrilledger.domain.converter;
 
 import java.util.Currency;
 
