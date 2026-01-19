@@ -91,4 +91,16 @@ public class Wallet {
         return this.balance;
     }
 
+    public UUID getId() {
+        return this.id;
+    }
+
+    public String getOwnerId() {
+        return this.ownerId;
+    }
+
+    public Instant getCreatedAt() {
+        return this.createdAt;
+    }
+
 }
