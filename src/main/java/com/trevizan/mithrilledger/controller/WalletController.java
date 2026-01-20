@@ -29,7 +29,11 @@ public class WalletController {
 
     @PostMapping
     public ResponseEntity<WalletResponse> create(@RequestBody WalletRequest request) {
-        if (request.currency() == null) {
+        if (request.ownerId() == null || request.ownerId().isBlank()) {
+            throw new IllegalArgumentException("OwnerId is required.");
+        }
+
+        if (request.currency() == null || request.currency().isBlank()) {
             throw new IllegalArgumentException("Currency is required");
         }
 

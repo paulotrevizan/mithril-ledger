@@ -21,10 +21,6 @@ public class WalletService {
 
     @Transactional
     public Wallet createWallet(String ownerId, Currency currency) {
-        if (ownerId == null || ownerId.isBlank()) {
-            throw new IllegalArgumentException("OwnerId is required.");
-        }
-
         Wallet wallet = Wallet.create(ownerId, currency);
         return walletRepository.save(wallet);
     }
