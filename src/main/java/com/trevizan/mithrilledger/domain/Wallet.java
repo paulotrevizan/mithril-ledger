@@ -1,6 +1,6 @@
 package com.trevizan.mithrilledger.domain;
 
-import com.trevizan.mithrilledger.exception.InsufficientBalanceException;
+import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 import com.trevizan.mithrilledger.domain.converter.CurrencyAttributeConverter;
 
 import java.math.BigDecimal;

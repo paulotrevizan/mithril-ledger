@@ -1,4 +1,4 @@
-package com.trevizan.mithrilledger.exception;
+package com.trevizan.mithrilledger.exception.domain;
 
 import java.util.UUID;
 
