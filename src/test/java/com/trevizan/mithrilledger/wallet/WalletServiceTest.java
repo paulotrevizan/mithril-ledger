@@ -1,8 +1,9 @@
-package com.trevizan.mithrilledger.service;
+package com.trevizan.mithrilledger.wallet;
 
 import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 import com.trevizan.mithrilledger.repository.WalletRepository;
+import com.trevizan.mithrilledger.service.WalletService;
 
 import java.math.BigDecimal;
 import java.util.Currency;

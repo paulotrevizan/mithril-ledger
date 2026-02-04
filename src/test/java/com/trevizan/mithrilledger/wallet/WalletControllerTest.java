@@ -1,4 +1,4 @@
-package com.trevizan.mithrilledger.controller;
+package com.trevizan.mithrilledger.wallet;
 
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 import com.trevizan.mithrilledger.domain.Wallet;

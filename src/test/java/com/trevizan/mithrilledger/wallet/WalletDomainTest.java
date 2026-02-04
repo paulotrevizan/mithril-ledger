@@ -1,5 +1,6 @@
-package com.trevizan.mithrilledger.domain;
+package com.trevizan.mithrilledger.wallet;
 
+import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 
 import java.math.BigDecimal;
@@ -11,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class WalletTests {
+class WalletDomainTests {
 
     @Test
     void shouldInitializeWalletWithZeroBalance() {
