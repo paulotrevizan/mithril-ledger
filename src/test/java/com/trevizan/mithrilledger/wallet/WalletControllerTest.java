@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class WalletControllerTests {
+class WalletControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

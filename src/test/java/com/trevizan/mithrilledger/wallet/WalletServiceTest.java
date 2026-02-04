@@ -22,7 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class WalletServiceTests {
+class WalletServiceTest {
 
     private WalletRepository walletRepository;
     private WalletService walletService;

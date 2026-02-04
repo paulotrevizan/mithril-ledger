@@ -169,9 +169,11 @@ All errors are returned in a **consistent JSON format**.
 
 ## Testing
 
-- Controller tests using `MockMvc`
-- Services mocked at controller level
-- Contract verified through tests before documentation
+- Controller tests using `MockMvc` (services mocked)
+- Services tested in isolation with unit tests
+- **Integration tests added for Wallet API (POST / GET)**  
+  Uses Spring Boot Test + H2 in-memory DB, validates HTTP + JSON contract end-to-end  
+  No business logic is executed yet
 
 ---
 
