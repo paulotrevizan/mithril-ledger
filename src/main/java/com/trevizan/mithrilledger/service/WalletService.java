@@ -1,10 +1,14 @@
 package com.trevizan.mithrilledger.service;
 
+import com.trevizan.mithrilledger.domain.Transaction;
 import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
+import com.trevizan.mithrilledger.repository.TransactionRepository;
 import com.trevizan.mithrilledger.repository.WalletRepository;
 
+import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -14,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class WalletService {
 
     private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
 
-    public WalletService(WalletRepository walletRepository) {
+    public WalletService(WalletRepository walletRepository, TransactionRepository transactionRepository) {
         this.walletRepository = walletRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -30,6 +36,23 @@ public class WalletService {
         return walletRepository.findById(id).orElseThrow(
             () -> new WalletNotFoundException(id)
         );
+    }
+
+    @Transactional
+    public Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount) {
+        Objects.requireNonNull(fromWallet, "Origin Wallet cannot be null.");
+        Objects.requireNonNull(toWallet, "Destination Wallet cannot be null.");
+
+        fromWallet.debit(amount);
+        toWallet.credit(amount);
+
+        walletRepository.save(fromWallet);
+        walletRepository.save(toWallet);
+
+        Transaction transaction = new Transaction(fromWallet, toWallet, amount);
+        transactionRepository.save(transaction);
+
+        return transaction;
     }
 
 }

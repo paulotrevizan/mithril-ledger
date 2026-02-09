@@ -2,6 +2,7 @@ package com.trevizan.mithrilledger.wallet;
 
 import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
+import com.trevizan.mithrilledger.repository.TransactionRepository;
 import com.trevizan.mithrilledger.repository.WalletRepository;
 import com.trevizan.mithrilledger.service.WalletService;
 
@@ -26,11 +27,12 @@ class WalletServiceTest {
 
     private WalletRepository walletRepository;
     private WalletService walletService;
+    private TransactionRepository transactionRepository;
 
     @BeforeEach
     void setUp() {
         walletRepository = Mockito.mock(WalletRepository.class);
-        walletService = new WalletService(walletRepository);
+        walletService = new WalletService(walletRepository, transactionRepository);
     }
 
     @Test
