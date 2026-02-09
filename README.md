@@ -140,6 +140,84 @@ Returns wallet details.
 
 ---
 
+## Credit Wallet
+
+**POST** `/api/v1/wallets/credit`
+
+Credits a wallet with a specified amount.
+
+### Request Body
+
+```json
+{
+  "walletId": "uuid",
+  "amount": 100.50
+}
+```
+
+### Validation Rules
+
+- `walletId` must not be null
+- `amount` must not be null and **greater than 0**
+
+---
+
+### Success Response
+
+**200 OK**
+
+**Body**
+
+```json
+{
+  "id": "uuid",
+  "ownerId": "string",
+  "balance": 150.50,
+  "currency": "EUR",
+  "createdAt": "2026-01-28T13:56:51Z"
+}
+```
+---
+
+## Debit Wallet
+
+**POST** `/api/v1/wallets/debit`
+
+Debits a wallet with a specified amount.
+
+### Request Body
+
+```json
+{
+  "walletId": "uuid",
+  "amount": 50.25
+}
+```
+
+### Validation Rules
+
+- `walletId` must not be null
+- `amount` must not be null and **greater than 0**
+- Wallet must have **sufficient balance** (cannot go negative)
+
+### Success Response
+
+**200 OK**
+
+**Body**
+
+```json
+{
+  "id": "uuid",
+  "ownerId": "string",
+  "balance": 100.25,
+  "currency": "EUR",
+  "createdAt": "2026-01-28T13:56:51Z"
+}
+```
+
+---
+
 ## Error Handling
 
 All errors are returned in a **consistent JSON format**.
@@ -160,10 +238,11 @@ All errors are returned in a **consistent JSON format**.
 
 ### Common Error Scenarios
 
-| Status | Description              |
-|--------|--------------------------|
-| 400    | Invalid or missing input |
-| 404    | Wallet not found         |
+| Status | Description                              |
+|--------|------------------------------------------|
+| 400    | Invalid or missing input                 |
+| 404    | Wallet not found                         |
+| 409    | Insufficient balance for debit operation |
 
 ---
 
