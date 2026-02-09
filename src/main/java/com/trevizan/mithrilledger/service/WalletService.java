@@ -10,11 +10,15 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WalletService {
+
+    private static final Logger log = LoggerFactory.getLogger(WalletService.class);
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
@@ -27,7 +31,15 @@ public class WalletService {
     @Transactional
     public Wallet createWallet(String ownerId, Currency currency) {
         Wallet wallet = Wallet.create(ownerId, currency);
-        return walletRepository.save(wallet);
+        walletRepository.save(wallet);
+
+        log.info("Wallet created: walletId={}, ownerId={}, currency={}",
+            wallet.getId(),
+            wallet.getOwnerId(),
+            wallet.getCurrency()
+        );
+
+        return wallet;
     }
 
     @Transactional(readOnly = true)
@@ -61,6 +73,13 @@ public class WalletService {
 
         Transaction transaction = new Transaction(fromWallet, toWallet, amount);
         transactionRepository.save(transaction);
+
+        log.info("Transfer executed: transactionId={}, fromWalletId={}, toWalletId={}, amount={}",
+            transaction.getId(),
+            fromWallet.getId(),
+            toWallet.getId(),
+            amount
+        );
 
         return transaction;
     }
