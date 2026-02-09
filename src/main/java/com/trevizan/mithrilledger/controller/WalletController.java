@@ -2,6 +2,7 @@ package com.trevizan.mithrilledger.controller;
 
 import com.trevizan.mithrilledger.controller.dto.TransactionResponse;
 import com.trevizan.mithrilledger.controller.dto.TransferRequest;
+import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletResponse;
 import com.trevizan.mithrilledger.domain.Transaction;
@@ -33,13 +34,7 @@ public class WalletController {
 
     @PostMapping
     public ResponseEntity<WalletResponse> create(@RequestBody WalletRequest request) {
-        if (request.ownerId() == null || request.ownerId().isBlank()) {
-            throw new IllegalArgumentException("OwnerId is required.");
-        }
-
-        if (request.currency() == null || request.currency().isBlank()) {
-            throw new IllegalArgumentException("Currency is required");
-        }
+        validateWalletRequest(request);
 
         Currency currency;
         try {
@@ -64,19 +59,35 @@ public class WalletController {
         return WalletResponse.from(walletService.getWalletById(id));
     }
 
+    @PostMapping("/credit")
+    public ResponseEntity<WalletResponse> credit(@RequestBody WalletAmountRequest request) {
+        validateWalletAmountRequest(request);
+
+        Wallet wallet = walletService.credit(
+            request.walletId(),
+            request.amount()
+        );
+
+        WalletResponse response = WalletResponse.from(wallet);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/debit")
+    public ResponseEntity<WalletResponse> debit(@RequestBody WalletAmountRequest request) {
+        validateWalletAmountRequest(request);
+
+        Wallet wallet = walletService.debit(
+            request.walletId(),
+            request.amount()
+        );
+
+        WalletResponse response = WalletResponse.from(wallet);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/transfer")
     public ResponseEntity<TransactionResponse> transfer(@RequestBody TransferRequest request) {
-        if (request.fromWalletId() == null) {
-            throw new IllegalArgumentException("Origin Wallet ID is required.");
-        }
-
-        if (request.toWalletId() == null) {
-            throw new IllegalArgumentException("Destination Walled ID is required.");
-        }
-
-        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be greater than 0.");
-        }
+        validateTransferRequest(request);
 
         Transaction transaction = walletService.transfer(
             walletService.getWalletById(request.fromWalletId()),
@@ -88,6 +99,36 @@ public class WalletController {
 
         URI location = URI.create("/api/v1/wallets/transactions/" + transaction.getId());
         return ResponseEntity.created(location).body(response);
+    }
+
+    private void validateWalletRequest(WalletRequest request) {
+        if (request.ownerId() == null || request.ownerId().isBlank()) {
+            throw new IllegalArgumentException("OwnerId is required.");
+        }
+        if (request.currency() == null || request.currency().isBlank()) {
+            throw new IllegalArgumentException("Currency is required.");
+        }
+    }
+
+    private void validateWalletAmountRequest(WalletAmountRequest request) {
+        if (request.walletId() == null) {
+            throw new IllegalArgumentException("WalletId is required.");
+        }
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0.");
+        }
+    }
+
+    private void validateTransferRequest(TransferRequest request) {
+        if (request.fromWalletId() == null) {
+            throw new IllegalArgumentException("Origin Wallet ID is required.");
+        }
+        if (request.toWalletId() == null) {
+            throw new IllegalArgumentException("Destination Wallet ID is required.");
+        }
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0.");
+        }
     }
 
 }

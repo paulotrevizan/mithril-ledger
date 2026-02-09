@@ -39,6 +39,20 @@ public class WalletService {
     }
 
     @Transactional
+    public Wallet credit(UUID walletId, BigDecimal amount) {
+        Wallet wallet = getWalletById(walletId);
+        wallet.credit(amount);
+        return walletRepository.save(wallet);
+    }
+
+    @Transactional
+    public Wallet debit(UUID walletId, BigDecimal amount) {
+        Wallet wallet = getWalletById(walletId);
+        wallet.debit(amount);
+        return walletRepository.save(wallet);
+    }
+
+    @Transactional
     public Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount) {
         fromWallet.debit(amount);
         toWallet.credit(amount);

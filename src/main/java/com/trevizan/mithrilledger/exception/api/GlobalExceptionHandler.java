@@ -1,5 +1,6 @@
 package com.trevizan.mithrilledger.exception.api;
 
+import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 
 import java.time.Instant;
@@ -19,17 +20,7 @@ public class GlobalExceptionHandler {
         WalletNotFoundException ex,
         HttpServletRequest request
     ) {
-        ErrorResponse response = new ErrorResponse(
-            Instant.now(),
-            HttpStatus.NOT_FOUND.value(),
-            HttpStatus.NOT_FOUND.getReasonPhrase(),
-            ex.getMessage(),
-            request.getRequestURI()
-        );
-
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(response);
+        return buildErrorResponse(ex, HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -37,17 +28,30 @@ public class GlobalExceptionHandler {
         IllegalArgumentException ex,
         HttpServletRequest request
     ) {
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientBalanceException(
+        InsufficientBalanceException ex,
+        HttpServletRequest request
+    ) {
+        return buildErrorResponse(ex, HttpStatus.CONFLICT, request);
+    }
+
+    private ResponseEntity<ErrorResponse> buildErrorResponse(
+        Exception ex,
+        HttpStatus status,
+        HttpServletRequest request
+    ) {
         ErrorResponse response = new ErrorResponse(
             Instant.now(),
-            HttpStatus.BAD_REQUEST.value(),
-            HttpStatus.BAD_REQUEST.getReasonPhrase(),
+            status.value(),
+            status.getReasonPhrase(),
             ex.getMessage(),
             request.getRequestURI()
         );
-
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(response);
+        return ResponseEntity.status(status).body(response);
     }
 
 }
