@@ -1,6 +1,11 @@
 package com.trevizan.mithrilledger.wallet;
 
+import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
+
+import java.math.BigDecimal;
+import java.net.URI;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +45,6 @@ class WalletApiTest {
             .getResponse()
             .getHeader("Location");
 
-        // then: fetch wallet
         mockMvc.perform(get(location))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").exists())
@@ -60,6 +64,64 @@ class WalletApiTest {
             .andExpect(jsonPath("$.path")
                 .value("/api/v1/wallets/00000000-0000-0000-0000-000000000000"))
             .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void shouldReturn200WhenCreditAndDebitWalletFlow() throws Exception {
+        WalletRequest createRequest = new WalletRequest("1234", "EUR");
+        String location = mockMvc.perform(post("/api/v1/wallets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+        URI locationUri = URI.create(location);
+        String path = locationUri.getPath();
+
+        String id = path.substring(path.lastIndexOf('/') + 1);
+        UUID walletId = UUID.fromString(id);
+
+        mockMvc.perform(post("/api/v1/wallets/credit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, BigDecimal.valueOf(100)))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.balance").value(100));
+
+        mockMvc.perform(post("/api/v1/wallets/debit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, BigDecimal.valueOf(40)))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.balance").value(60));
+
+        mockMvc.perform(get("/api/v1/wallets/{id}", walletId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.balance").value(60));
+    }
+
+    @Test
+    void shouldReturn409WhenDebitMoreThanBalance() throws Exception {
+        WalletRequest createRequest = new WalletRequest("1234", "EUR");
+        String location = mockMvc.perform(post("/api/v1/wallets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+        URI locationUri = URI.create(location);
+        String path = locationUri.getPath();
+
+        String id = path.substring(path.lastIndexOf('/') + 1);
+        UUID walletId = UUID.fromString(id);
+
+        mockMvc.perform(post("/api/v1/wallets/debit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, BigDecimal.valueOf(10)))))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(409));
     }
 
 }

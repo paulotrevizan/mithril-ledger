@@ -1,10 +1,12 @@
 package com.trevizan.mithrilledger.wallet;
 
+import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 import com.trevizan.mithrilledger.service.WalletService;
 
+import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.UUID;
 
@@ -110,6 +112,66 @@ class WalletControllerTest {
             .andExpect(jsonPath("$.message").value("Wallet not found: " + id))
             .andExpect(jsonPath("$.path").value("/api/v1/wallets/" + id))
             .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void shouldReturn200WhenCreditWallet() throws Exception {
+        UUID walletId = walletCreated.getId();
+        BigDecimal amount = BigDecimal.valueOf(100);
+
+        when(walletService.credit(walletId, amount)).thenReturn(walletCreated);
+
+        mockMvc.perform(post("/api/v1/wallets/credit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(walletId.toString()))
+            .andExpect(jsonPath("$.ownerId").value("1234"));
+    }
+
+    @Test
+    void shouldReturn200WhenDebitWallet() throws Exception {
+        UUID walletId = walletCreated.getId();
+        BigDecimal amount = BigDecimal.valueOf(50);
+
+        when(walletService.debit(walletId, amount)).thenReturn(walletCreated);
+
+        mockMvc.perform(post("/api/v1/wallets/debit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(walletId.toString()))
+            .andExpect(jsonPath("$.ownerId").value("1234"));
+    }
+
+    @Test
+    void shouldReturn404WhenCreditWalletNotFound() throws Exception {
+        UUID walletId = UUID.randomUUID();
+        BigDecimal amount = BigDecimal.valueOf(100);
+
+        when(walletService.credit(walletId, amount))
+            .thenThrow(new WalletNotFoundException(walletId));
+
+        mockMvc.perform(post("/api/v1/wallets/credit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void shouldReturn404WhenDebitWalletNotFound() throws Exception {
+        UUID walletId = UUID.randomUUID();
+        BigDecimal amount = BigDecimal.valueOf(50);
+
+        when(walletService.debit(walletId, amount))
+            .thenThrow(new WalletNotFoundException(walletId));
+
+        mockMvc.perform(post("/api/v1/wallets/debit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(404));
     }
 
 }
