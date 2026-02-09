@@ -76,4 +76,74 @@ class WalletServiceTest {
         verify(walletRepository, times(1)).findById(id);
     }
 
+    @Test
+    void shouldCreditWalletSuccessfully() {
+        Wallet wallet = Wallet.create("1234", Currency.getInstance("EUR"));
+        UUID id = wallet.getId();
+
+        when(walletRepository.findById(id)).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any(Wallet.class))).thenReturn(wallet);
+
+        Wallet credited = walletService.credit(id, new BigDecimal("100.50"));
+
+        assertEquals(0, credited.getBalance().compareTo(new BigDecimal("100.50")));
+        verify(walletRepository, times(1)).findById(id);
+        verify(walletRepository, times(1)).save(wallet);
+    }
+
+    @Test
+    void shouldDebitWalletSuccessfully() {
+        Wallet wallet = Wallet.create("1234", Currency.getInstance("EUR"));
+        wallet.credit(new BigDecimal("200.00"));
+        UUID id = wallet.getId();
+
+        when(walletRepository.findById(id)).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any(Wallet.class))).thenReturn(wallet);
+
+        Wallet debited = walletService.debit(id, new BigDecimal("150.00"));
+
+        assertEquals(0, debited.getBalance().compareTo(new BigDecimal("50.00")));
+        verify(walletRepository, times(1)).findById(id);
+        verify(walletRepository, times(1)).save(wallet);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDebitInsufficientBalance() {
+        Wallet wallet = Wallet.create("1234", Currency.getInstance("EUR"));
+        UUID id = wallet.getId();
+
+        when(walletRepository.findById(id)).thenReturn(Optional.of(wallet));
+
+        assertThatThrownBy(() -> walletService.debit(id, new BigDecimal("200.00")))
+            .isInstanceOf(com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException.class)
+            .hasMessageContaining(id.toString());
+
+        verify(walletRepository, times(1)).findById(id);
+        verify(walletRepository, times(0)).save(wallet);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenWalletNotFoundOnCredit() {
+        UUID id = UUID.randomUUID();
+        when(walletRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> walletService.credit(id, new BigDecimal("10.00")))
+            .isInstanceOf(WalletNotFoundException.class)
+            .hasMessageContaining(id.toString());
+
+        verify(walletRepository, times(1)).findById(id);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenWalletNotFoundOnDebit() {
+        UUID id = UUID.randomUUID();
+        when(walletRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> walletService.debit(id, new BigDecimal("10.00")))
+            .isInstanceOf(WalletNotFoundException.class)
+            .hasMessageContaining(id.toString());
+
+        verify(walletRepository, times(1)).findById(id);
+    }
+
 }

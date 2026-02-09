@@ -8,7 +8,6 @@ import com.trevizan.mithrilledger.repository.WalletRepository;
 
 import java.math.BigDecimal;
 import java.util.Currency;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
