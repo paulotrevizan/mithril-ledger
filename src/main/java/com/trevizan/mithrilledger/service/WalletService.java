@@ -40,9 +40,6 @@ public class WalletService {
 
     @Transactional
     public Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount) {
-        Objects.requireNonNull(fromWallet, "Origin Wallet cannot be null.");
-        Objects.requireNonNull(toWallet, "Destination Wallet cannot be null.");
-
         fromWallet.debit(amount);
         toWallet.credit(amount);
 

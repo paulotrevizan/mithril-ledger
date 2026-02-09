@@ -1,10 +1,14 @@
 package com.trevizan.mithrilledger.controller;
 
+import com.trevizan.mithrilledger.controller.dto.TransactionResponse;
+import com.trevizan.mithrilledger.controller.dto.TransferRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletResponse;
+import com.trevizan.mithrilledger.domain.Transaction;
 import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.service.WalletService;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Currency;
 import java.util.UUID;
@@ -58,6 +62,32 @@ public class WalletController {
     @GetMapping("/{id}")
     public WalletResponse getWallet(@PathVariable UUID id) {
         return WalletResponse.from(walletService.getWalletById(id));
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransferRequest request) {
+        if (request.fromWalletId() == null) {
+            throw new IllegalArgumentException("Origin Wallet ID is required.");
+        }
+
+        if (request.toWalletId() == null) {
+            throw new IllegalArgumentException("Destination Walled ID is required.");
+        }
+
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0.");
+        }
+
+        Transaction transaction = walletService.transfer(
+            walletService.getWalletById(request.fromWalletId()),
+            walletService.getWalletById(request.toWalletId()),
+            request.amount()
+        );
+
+        TransactionResponse response = TransactionResponse.from(transaction);
+
+        URI location = URI.create("/api/v1/wallets/transactions/" + transaction.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
 }
