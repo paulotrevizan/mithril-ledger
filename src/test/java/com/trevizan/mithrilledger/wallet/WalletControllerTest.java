@@ -1,16 +1,20 @@
 package com.trevizan.mithrilledger.wallet;
 
+import com.trevizan.mithrilledger.controller.dto.TransferRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
+import com.trevizan.mithrilledger.domain.Transaction;
 import com.trevizan.mithrilledger.domain.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 import com.trevizan.mithrilledger.service.WalletService;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Currency;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -21,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -119,11 +124,13 @@ class WalletControllerTest {
         UUID walletId = walletCreated.getId();
         BigDecimal amount = BigDecimal.valueOf(100);
 
+        WalletAmountRequest request = new WalletAmountRequest(walletId, amount);
+
         when(walletService.credit(walletId, amount)).thenReturn(walletCreated);
 
         mockMvc.perform(post("/api/v1/wallets/credit")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(walletId.toString()))
             .andExpect(jsonPath("$.ownerId").value("1234"));
@@ -134,11 +141,13 @@ class WalletControllerTest {
         UUID walletId = walletCreated.getId();
         BigDecimal amount = BigDecimal.valueOf(50);
 
+        WalletAmountRequest request = new WalletAmountRequest(walletId, amount);
+
         when(walletService.debit(walletId, amount)).thenReturn(walletCreated);
 
         mockMvc.perform(post("/api/v1/wallets/debit")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(walletId.toString()))
             .andExpect(jsonPath("$.ownerId").value("1234"));
@@ -149,12 +158,14 @@ class WalletControllerTest {
         UUID walletId = UUID.randomUUID();
         BigDecimal amount = BigDecimal.valueOf(100);
 
+        WalletAmountRequest request = new WalletAmountRequest(walletId, amount);
+
         when(walletService.credit(walletId, amount))
             .thenThrow(new WalletNotFoundException(walletId));
 
         mockMvc.perform(post("/api/v1/wallets/credit")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }
@@ -164,14 +175,79 @@ class WalletControllerTest {
         UUID walletId = UUID.randomUUID();
         BigDecimal amount = BigDecimal.valueOf(50);
 
+        WalletAmountRequest request = new WalletAmountRequest(walletId, amount);
+
         when(walletService.debit(walletId, amount))
             .thenThrow(new WalletNotFoundException(walletId));
 
         mockMvc.perform(post("/api/v1/wallets/debit")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, amount))))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void shouldReturn200WhenTransferBetweenWallets() throws Exception {
+        UUID fromWalletId = UUID.randomUUID();
+        UUID toWalletId = UUID.randomUUID();
+        BigDecimal amount = BigDecimal.valueOf(50);
+
+        Wallet fromWallet = Wallet.create("1234", Currency.getInstance("EUR"));
+        Wallet toWallet = Wallet.create("1235", Currency.getInstance("EUR"));
+
+        TransferRequest request = new TransferRequest(fromWalletId, toWalletId, amount);
+
+        when(walletService.getWalletById(fromWalletId)).thenReturn(fromWallet);
+        when(walletService.getWalletById(toWalletId)).thenReturn(toWallet);
+
+        Transaction transaction = new Transaction(fromWallet, toWallet, amount);
+        UUID transactionId = UUID.randomUUID();
+
+        Transaction transactionSpy = Mockito.spy(transaction);
+        doReturn(transactionId).when(transactionSpy).getId();
+
+        when(walletService.transfer(fromWallet, toWallet, amount)).thenReturn(transactionSpy);
+
+        mockMvc.perform(post("/api/v1/wallets/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())  // você retorna 201 no controller
+            .andExpect(jsonPath("$.fromWalletId").value(fromWallet.getId().toString()))
+            .andExpect(jsonPath("$.toWalletId").value(toWallet.getId().toString()))
+            .andExpect(jsonPath("$.amount").value(amount.intValue()))
+            .andExpect(jsonPath("$.id").value(transactionId.toString()));
+    }
+
+    @Test
+    void shouldReturn400WhenTransferInvalidAmount() throws Exception {
+        UUID fromWalletId = UUID.randomUUID();
+        UUID toWalletId = UUID.randomUUID();
+        BigDecimal amount = BigDecimal.ZERO;
+
+        TransferRequest request = new TransferRequest(fromWalletId, toWalletId, amount);
+
+        mockMvc.perform(post("/api/v1/wallets/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn404WhenTransferWalletNotFound() throws Exception {
+        UUID fromWalletId = UUID.randomUUID();
+        UUID toWalletId = UUID.randomUUID();
+        BigDecimal amount = BigDecimal.valueOf(50);
+
+        TransferRequest request = new TransferRequest(fromWalletId, toWalletId, amount);
+
+        when(walletService.transfer(any(), any(), any()))
+            .thenThrow(new WalletNotFoundException(fromWalletId));
+
+        mockMvc.perform(post("/api/v1/wallets/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isNotFound());
     }
 
 }

@@ -1,5 +1,6 @@
 package com.trevizan.mithrilledger.wallet;
 
+import com.trevizan.mithrilledger.controller.dto.TransferRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 
@@ -122,6 +123,69 @@ class WalletApiTest {
                 .content(objectMapper.writeValueAsString(new WalletAmountRequest(walletId, BigDecimal.valueOf(10)))))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void shouldReturn201WhenTransferBetweenWallets() throws Exception {
+        WalletRequest fromRequest = new WalletRequest("1234", "EUR");
+        String fromLocation = mockMvc.perform(post("/api/v1/wallets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(fromRequest)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+        URI fromLocationUri = URI.create(fromLocation);
+        String fromPath = fromLocationUri.getPath();
+
+        String fromId = fromPath.substring(fromPath.lastIndexOf('/') + 1);
+        UUID fromWalletId = UUID.fromString(fromId);
+
+        WalletRequest toRequest = new WalletRequest("1235", "EUR");
+        String toLocation = mockMvc.perform(post("/api/v1/wallets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(toRequest)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+        URI toLocationUri = URI.create(toLocation);
+        String toPath = toLocationUri.getPath();
+
+        String toId = toPath.substring(toPath.lastIndexOf('/') + 1);
+        UUID toWalletId = UUID.fromString(toId);
+
+        BigDecimal creditAmount = BigDecimal.valueOf(100);
+        WalletAmountRequest amountRequest = new WalletAmountRequest(fromWalletId, creditAmount);
+
+        mockMvc.perform(post("/api/v1/wallets/credit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(amountRequest)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.balance").value(creditAmount.intValue()));
+
+        BigDecimal amount = BigDecimal.valueOf(50);
+        TransferRequest transferRequest = new TransferRequest(fromWalletId, toWalletId, amount);
+
+        mockMvc.perform(post("/api/v1/wallets/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transferRequest)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.fromWalletId").value(fromWalletId.toString()))
+            .andExpect(jsonPath("$.toWalletId").value(toWalletId.toString()))
+            .andExpect(jsonPath("$.amount").value(amount.intValue()))
+            .andExpect(jsonPath("$.createdAt").exists());
+
+        mockMvc.perform(get("/api/v1/wallets/{id}", fromWalletId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.balance").value(50));
+
+        mockMvc.perform(get("/api/v1/wallets/{id}", toWalletId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.balance").value(50));
     }
 
 }
