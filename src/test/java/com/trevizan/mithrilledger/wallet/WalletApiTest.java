@@ -188,4 +188,51 @@ class WalletApiTest {
             .andExpect(jsonPath("$.balance").value(50));
     }
 
+    @Test
+    void shouldReturn409WhenTransferWithInsufficientBalance() throws Exception {
+        WalletRequest fromRequest = new WalletRequest("1234", "EUR");
+        String fromLocation = mockMvc.perform(post("/api/v1/wallets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(fromRequest)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+        URI fromLocationUri = URI.create(fromLocation);
+        String fromPath = fromLocationUri.getPath();
+
+        String fromId = fromPath.substring(fromPath.lastIndexOf('/') + 1);
+        UUID fromWalletId = UUID.fromString(fromId);
+
+        WalletRequest toRequest = new WalletRequest("1235", "EUR");
+        String toLocation = mockMvc.perform(post("/api/v1/wallets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(toRequest)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+        URI toLocationUri = URI.create(toLocation);
+        String toPath = toLocationUri.getPath();
+
+        String toId = toPath.substring(toPath.lastIndexOf('/') + 1);
+        UUID toWalletId = UUID.fromString(toId);
+
+
+        BigDecimal amount = BigDecimal.valueOf(50);
+        TransferRequest transferRequest = new TransferRequest(fromWalletId, toWalletId, amount);
+
+        mockMvc.perform(post("/api/v1/wallets/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transferRequest)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(409))
+            .andExpect(jsonPath("$.message")
+                .value("Wallet " + fromWalletId + " has insufficient balance."))
+            .andExpect(jsonPath("$.path").value("/api/v1/wallets/transfer"))
+            .andExpect(jsonPath("$.timestamp").exists());
+    }
+
 }
