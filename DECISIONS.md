@@ -24,6 +24,15 @@
     - domain consistency even if the API is bypassed
     - safe and explicit error handling without exposing internal exceptions
 
+### Transfer operation
+- **Decision:** implement transfer in `WalletService` as debit and credit operation.
+- **Rationale:** transfer between two wallets; domain invariants remain in `Wallet`.
+- **Trade-off:** 
+  - service coordinates multiple wallets 
+  - domain still enforces balance rules
+  - `@Transactional` ensures atomicity;
+  - persist `Transaction` entity for traceability.
+
 ### Exception strategy
 - **Decision:** use a domain-specific exception (`InsufficientBalanceException`) for debit violations.
 - **Rationale:** clearly communicates business rules; improves maintainability and readability.

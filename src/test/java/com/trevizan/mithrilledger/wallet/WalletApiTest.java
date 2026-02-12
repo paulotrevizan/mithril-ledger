@@ -220,7 +220,6 @@ class WalletApiTest {
         String toId = toPath.substring(toPath.lastIndexOf('/') + 1);
         UUID toWalletId = UUID.fromString(toId);
 
-
         BigDecimal amount = BigDecimal.valueOf(50);
         TransferRequest transferRequest = new TransferRequest(fromWalletId, toWalletId, amount);
 

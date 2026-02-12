@@ -22,12 +22,16 @@ At its current stage, the system supports:
 
 - Wallet creation
 - Wallet retrieval by id
+- Wallet credit
+- Wallet debit
+- Wallet transfers
 - Stable and explicit API contract
 - Consistent error responses
 - Controller-level validation
 - Controller tests with mocked services
+- Integration tests covering end-to-end HTTP flows
 
-> ⚠️ Transfers, balance mutations, idempotency and concurrency handling are **not implemented yet**.  
+> ⚠️ Idempotency and concurrency handling are **not implemented yet**.  
 > Planned work is tracked explicitly (see **Future Improvements**).
 
 ---
@@ -216,6 +220,55 @@ Debits a wallet with a specified amount.
 }
 ```
 
+## Transfer Between Wallets
+
+**POST** `/api/v1/wallets/transfer`
+
+Transfers an amount from one wallet to another.
+
+### Request Body
+
+```json
+{
+  "fromWalletId": "uuid",
+  "toWalletId": "uuid",
+  "amount": 50.00
+}
+```
+
+### Validation Rules
+
+- `fromWalletId` must not be null
+- `toWalletId` must not be null
+- `fromWalletId` and toWalletId must be different
+- `amount` must be greater than 0
+- Source wallet must have sufficient balance
+- Both wallets must exist
+
+---
+
+### Success Response
+
+**201 Created**
+
+**Headers**
+
+```
+Location: /api/v1/wallets/transactions/{transactionId}
+```
+
+**Body**
+
+```json
+{
+  "id": "uuid",
+  "fromWalletId": "uuid",
+  "toWalletId": "uuid",
+  "amount": 50.00,
+  "createdAt": "2026-02-12T14:03:22Z"
+}
+```
+
 ---
 
 ## Error Handling
@@ -279,8 +332,6 @@ DECISIONS.md
 > 🚫 Scope is intentionally controlled.  
 > Any new idea must be written here and **not implemented immediately**.
 
-- Wallet transfers
-- Balance mutations
 - Ledger based balance model
 - Idempotency keys
 - Concurrency handling
