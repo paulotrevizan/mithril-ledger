@@ -3,13 +3,12 @@ package com.trevizan.mithrilledger.wallet;
 import com.trevizan.mithrilledger.controller.dto.TransferRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
-import com.trevizan.mithrilledger.domain.Transaction;
-import com.trevizan.mithrilledger.domain.Wallet;
+import com.trevizan.mithrilledger.domain.model.Transaction;
+import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 import com.trevizan.mithrilledger.service.WalletService;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.Currency;
 import java.util.UUID;
 

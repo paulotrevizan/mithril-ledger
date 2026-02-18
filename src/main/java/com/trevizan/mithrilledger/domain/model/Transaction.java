@@ -1,4 +1,4 @@
-package com.trevizan.mithrilledger.domain;
+package com.trevizan.mithrilledger.domain.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;

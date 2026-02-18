@@ -1,7 +1,7 @@
 package com.trevizan.mithrilledger.wallet;
 
-import com.trevizan.mithrilledger.domain.Transaction;
-import com.trevizan.mithrilledger.domain.Wallet;
+import com.trevizan.mithrilledger.domain.model.Transaction;
+import com.trevizan.mithrilledger.domain.model.Wallet;
 
 import java.math.BigDecimal;
 import java.util.Currency;

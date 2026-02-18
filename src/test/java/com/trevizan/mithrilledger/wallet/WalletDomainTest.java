@@ -1,6 +1,6 @@
 package com.trevizan.mithrilledger.wallet;
 
-import com.trevizan.mithrilledger.domain.Wallet;
+import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 
 import java.math.BigDecimal;

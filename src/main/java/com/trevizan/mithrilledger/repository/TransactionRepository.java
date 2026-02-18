@@ -1,6 +1,6 @@
 package com.trevizan.mithrilledger.repository;
 
-import com.trevizan.mithrilledger.domain.Transaction;
+import com.trevizan.mithrilledger.domain.model.Transaction;
 
 import java.util.UUID;
 

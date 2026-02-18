@@ -1,6 +1,6 @@
 package com.trevizan.mithrilledger.controller.dto;
 
-import com.trevizan.mithrilledger.domain.Transaction;
+import com.trevizan.mithrilledger.domain.model.Transaction;
 
 import java.math.BigDecimal;
 import java.time.Instant;

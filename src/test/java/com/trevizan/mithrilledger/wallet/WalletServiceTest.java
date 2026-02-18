@@ -1,7 +1,7 @@
 package com.trevizan.mithrilledger.wallet;
 
-import com.trevizan.mithrilledger.domain.Transaction;
-import com.trevizan.mithrilledger.domain.Wallet;
+import com.trevizan.mithrilledger.domain.model.Transaction;
+import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 import com.trevizan.mithrilledger.repository.TransactionRepository;

@@ -1,7 +1,7 @@
-package com.trevizan.mithrilledger.domain;
+package com.trevizan.mithrilledger.domain.model;
 
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
-import com.trevizan.mithrilledger.domain.converter.CurrencyAttributeConverter;
+import com.trevizan.mithrilledger.domain.model.converter.CurrencyAttributeConverter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
