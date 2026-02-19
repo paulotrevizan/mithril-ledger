@@ -16,3 +16,6 @@ spring:
   h2:
     console:
       enabled: false
+
+exchange:
+  base-url: "http://localhost:${wiremock.server.port}"
