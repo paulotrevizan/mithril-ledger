@@ -1,5 +1,6 @@
 package com.trevizan.mithrilledger.service;
 
+import com.trevizan.mithrilledger.domain.exchange.ExchangeClient;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
@@ -22,10 +23,16 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final ExchangeClient exchangeClient;
 
-    public WalletService(WalletRepository walletRepository, TransactionRepository transactionRepository) {
+    public WalletService(
+        WalletRepository walletRepository,
+        TransactionRepository transactionRepository,
+        ExchangeClient exchangeClient
+    ) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.exchangeClient = exchangeClient;
     }
 
     @Transactional
@@ -65,8 +72,10 @@ public class WalletService {
 
     @Transactional
     public Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount) {
+        BigDecimal amountToCredit = getAmountToCredit(fromWallet, toWallet, amount);
+
         fromWallet.debit(amount);
-        toWallet.credit(amount);
+        toWallet.credit(amountToCredit);
 
         walletRepository.save(fromWallet);
         walletRepository.save(toWallet);
@@ -82,6 +91,22 @@ public class WalletService {
         );
 
         return transaction;
+    }
+
+    private BigDecimal getAmountToCredit(
+        Wallet fromWallet,
+        Wallet toWallet,
+        BigDecimal amount
+    ) {
+        if (fromWallet.getCurrency().equals(toWallet.getCurrency())) {
+            return amount;
+        }
+
+        BigDecimal rate = exchangeClient.getRate(
+            fromWallet.getCurrency().getCurrencyCode(),
+            toWallet.getCurrency().getCurrencyCode()
+        );
+        return amount.multiply(rate);
     }
 
 }

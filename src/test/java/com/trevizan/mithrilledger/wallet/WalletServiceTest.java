@@ -1,5 +1,6 @@
 package com.trevizan.mithrilledger.wallet;
 
+import com.trevizan.mithrilledger.domain.exchange.ExchangeClient;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
@@ -30,12 +31,14 @@ class WalletServiceTest {
     private WalletRepository walletRepository;
     private WalletService walletService;
     private TransactionRepository transactionRepository;
+    private ExchangeClient exchangeClient;
 
     @BeforeEach
     void setUp() {
         walletRepository = Mockito.mock(WalletRepository.class);
         transactionRepository = Mockito.mock(TransactionRepository.class);
-        walletService = new WalletService(walletRepository, transactionRepository);
+        exchangeClient = Mockito.mock(ExchangeClient.class);
+        walletService = new WalletService(walletRepository, transactionRepository, exchangeClient);
     }
 
     @Test

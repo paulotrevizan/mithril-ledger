@@ -3,6 +3,7 @@ package com.trevizan.mithrilledger.wallet;
 import com.trevizan.mithrilledger.controller.dto.TransferRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletAmountRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletRequest;
+import com.trevizan.mithrilledger.domain.exchange.ExchangeClient;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
@@ -44,6 +45,9 @@ class WalletControllerTest {
 
     @MockitoBean
     private WalletService walletService;
+
+    @MockitoBean
+    private ExchangeClient exchangeClient;
 
     final private Wallet walletCreated =
         Wallet.create("1234", Currency.getInstance("EUR"));
@@ -211,7 +215,7 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/v1/wallets/transfer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isCreated())  // você retorna 201 no controller
+            .andExpect(status().isCreated())
             .andExpect(jsonPath("$.fromWalletId").value(fromWallet.getId().toString()))
             .andExpect(jsonPath("$.toWalletId").value(toWallet.getId().toString()))
             .andExpect(jsonPath("$.amount").value(amount.intValue()))
@@ -247,6 +251,38 @@ class WalletControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn200WhenTransferBetweenWalletsWithDifferentCurrencies() throws Exception {
+        UUID fromWalletId = UUID.randomUUID();
+        UUID toWalletId = UUID.randomUUID();
+        BigDecimal amount = BigDecimal.valueOf(50);
+
+        Wallet fromWallet = Wallet.create("1234", Currency.getInstance("EUR"));
+        Wallet toWallet = Wallet.create("1235", Currency.getInstance("USD"));
+
+        TransferRequest request = new TransferRequest(fromWalletId, toWalletId, amount);
+
+        when(walletService.getWalletById(fromWalletId)).thenReturn(fromWallet);
+        when(walletService.getWalletById(toWalletId)).thenReturn(toWallet);
+
+        Transaction transaction = new Transaction(fromWallet, toWallet, amount);
+        UUID transactionId = UUID.randomUUID();
+
+        Transaction transactionSpy = Mockito.spy(transaction);
+        doReturn(transactionId).when(transactionSpy).getId();
+
+        when(walletService.transfer(fromWallet, toWallet, amount)).thenReturn(transactionSpy);
+
+        mockMvc.perform(post("/api/v1/wallets/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.fromWalletId").value(fromWallet.getId().toString()))
+            .andExpect(jsonPath("$.toWalletId").value(toWallet.getId().toString()))
+            .andExpect(jsonPath("$.amount").value(amount.intValue()))
+            .andExpect(jsonPath("$.id").value(transactionId.toString()));
     }
 
 }
