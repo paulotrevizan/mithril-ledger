@@ -19,3 +19,18 @@ spring:
 
 exchange:
   base-url: "http://localhost:${wiremock.server.port}"
+
+resilience4j:
+  retry:
+    instances:
+      exchange-service:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+          - java.lang.IllegalStateException
