@@ -59,3 +59,23 @@
     - Transfers (`transfer`)
 - **Rationale:** supports audit and traceability for important operations without polluting logs with high volume balance mutations.
 - **Trade-off:** individual credit/debit operations are not logged; relies on domain invariants and tests for correctness.
+
+### External Exchange Service Integration
+- **Decision:** integrate with external currency exchange API via `HttpExchangeClient`.
+- **Rationale:** enables automatic currency conversion during wallet transfers; keeps business logic simple and consistent.
+- **Trade-off:** external dependency introduces risk of downtime or errors; mitigated by circuit breaker and retry strategy (using Resilience4j).
+
+### Resilience and Fault Tolerance
+- **Decision:** use Resilience4j circuit breaker for external API calls.
+- **Rationale:** prevents external failures from cascading into the domain logic; ensures wallet operations remain responsive even if exchange service fails.
+- **Trade-off:** temporary unavailability of exchange rates may result in partial functionality; fallback strategies right now is to block transfers between different currencies, as the exchange API doesn't exist.
+
+### Retry Strategy
+- **Decision:** implement a limited retry mechanism for transient network issues.
+- **Rationale:** improves reliability for brief outages without overloading the external service.
+- **Trade-off:** increases response time a little during retries; failed retries are surfaced as meaningful exceptions.
+
+### Error Handling for External Calls
+- **Decision:** propagate meaningful exceptions to the API layer for failed calls (e.g., `ResourceAccessException`).
+- **Rationale:** allows API to return proper HTTP codes and messages; avoids silent failures.
+- **Trade-off:** some failures will still bubble up as 5xx errors; future improvements may include proper fallback responses.

@@ -30,6 +30,7 @@ At its current stage, the system supports:
 - Controller-level validation
 - Controller tests with mocked services
 - Integration tests covering end-to-end HTTP flows
+- External integrations currently use basic resilience (retry + circuit breaker).
 
 > ⚠️ Idempotency and concurrency handling are **not implemented yet**.  
 > Planned work is tracked explicitly (see **Future Improvements**).
@@ -335,7 +336,6 @@ DECISIONS.md
 - Ledger based balance model
 - Idempotency keys
 - Concurrency handling
-- External integrations
 - Observability and metrics
 
 ---
