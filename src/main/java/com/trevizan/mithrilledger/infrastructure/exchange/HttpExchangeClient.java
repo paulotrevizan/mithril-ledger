@@ -2,6 +2,8 @@ package com.trevizan.mithrilledger.infrastructure.exchange;
 
 import com.trevizan.mithrilledger.domain.exchange.ExchangeClient;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 
 import java.math.BigDecimal;
@@ -26,6 +28,10 @@ public class HttpExchangeClient implements ExchangeClient {
 
     @Override
     @Retry(name = "exchange-service")
+    @CircuitBreaker(
+        name = "exchange-service",
+        fallbackMethod = "circuitBreakerFallback"
+    )
     public BigDecimal getRate(String from, String to) {
         String url = baseUrl + "/api/v1/exchanges/rates?from=" +  from + "&to=" + to;
 
@@ -37,6 +43,12 @@ public class HttpExchangeClient implements ExchangeClient {
         }
 
         return response.rate();
+    }
+
+    private BigDecimal circuitBreakerFallback(String from, String to, CallNotPermittedException ex) {
+        throw new RuntimeException(
+            "CircuitBreaker is OPEN. Exchange service unavailable for " + from + " -> " + to, ex
+        );
     }
 
 }

@@ -13,7 +13,7 @@ spring:
       path: /h2-console
 
 exchange:
-  base-url: "http://localhost:8071"
+  base-url: "http://localhost:48071"
 
 resilience4j:
   retry:
@@ -29,3 +29,17 @@ resilience4j:
         ignore-exceptions:
           - java.lang.IllegalArgumentException
           - java.lang.IllegalStateException
+  circuitbreaker:
+    instances:
+      exchange-service:
+        register-health-indicator: true
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 4
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 1
+        record-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+          - java.lang.IllegalStateException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
