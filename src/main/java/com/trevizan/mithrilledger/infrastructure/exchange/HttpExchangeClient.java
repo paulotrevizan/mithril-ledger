@@ -35,8 +35,7 @@ public class HttpExchangeClient implements ExchangeClient {
     public BigDecimal getRate(String from, String to) {
         String url = baseUrl + "/api/v1/exchanges/rates?from=" +  from + "&to=" + to;
 
-        ExchangeResponse response =
-            restTemplate.getForObject(url, ExchangeResponse.class);
+        ExchangeResponse response = restTemplate.getForObject(url, ExchangeResponse.class);
 
         if (response == null || response.rate() == null) {
             throw new IllegalStateException("Invalid exchange response.");

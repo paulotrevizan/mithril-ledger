@@ -10,7 +10,9 @@ public record TransactionResponse(
     UUID id,
     UUID fromWalletId,
     UUID toWalletId,
-    BigDecimal amount,
+    BigDecimal amountDebited,
+    BigDecimal amountCredited,
+    BigDecimal exchangeRate,
     Instant createdAt
 ) {
     public static TransactionResponse from(Transaction transaction) {
@@ -18,7 +20,9 @@ public record TransactionResponse(
             transaction.getId(),
             transaction.getFromWallet().getId(),
             transaction.getToWallet().getId(),
-            transaction.getAmount(),
+            transaction.getAmountDebited(),
+            transaction.getAmountCredited(),
+            transaction.getExchangeRate(),
             transaction.getCreatedAt()
         );
     }

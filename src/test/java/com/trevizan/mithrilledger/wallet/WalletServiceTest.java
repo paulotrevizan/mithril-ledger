@@ -172,7 +172,7 @@ class WalletServiceTest {
 
         assertEquals(fromWallet, transaction.getFromWallet());
         assertEquals(toWallet, transaction.getToWallet());
-        assertEquals(0, transaction.getAmount().compareTo(transferAmount));
+        assertEquals(0, transaction.getAmountDebited().compareTo(transferAmount));
         assertEquals(0, fromWallet.getBalance().compareTo(BigDecimal.valueOf(50)));
         assertEquals(0, toWallet.getBalance().compareTo(BigDecimal.valueOf(150)));
 

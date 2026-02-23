@@ -204,7 +204,7 @@ class WalletControllerTest {
         when(walletService.getWalletById(fromWalletId)).thenReturn(fromWallet);
         when(walletService.getWalletById(toWalletId)).thenReturn(toWallet);
 
-        Transaction transaction = new Transaction(fromWallet, toWallet, amount);
+        Transaction transaction = new Transaction(fromWallet, toWallet, amount, amount, BigDecimal.ONE);
         UUID transactionId = UUID.randomUUID();
 
         Transaction transactionSpy = Mockito.spy(transaction);
@@ -218,7 +218,9 @@ class WalletControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.fromWalletId").value(fromWallet.getId().toString()))
             .andExpect(jsonPath("$.toWalletId").value(toWallet.getId().toString()))
-            .andExpect(jsonPath("$.amount").value(amount.intValue()))
+            .andExpect(jsonPath("$.amountDebited").value(amount.intValue()))
+            .andExpect(jsonPath("$.amountCredited").value(amount.intValue()))
+            .andExpect(jsonPath("$.exchangeRate").value(BigDecimal.ONE))
             .andExpect(jsonPath("$.id").value(transactionId.toString()));
     }
 
@@ -258,6 +260,8 @@ class WalletControllerTest {
         UUID fromWalletId = UUID.randomUUID();
         UUID toWalletId = UUID.randomUUID();
         BigDecimal amount = BigDecimal.valueOf(50);
+        BigDecimal amountCredited = BigDecimal.valueOf(54.5);
+        BigDecimal exchangeRate = BigDecimal.valueOf(1.09);
 
         Wallet fromWallet = Wallet.create("1234", Currency.getInstance("EUR"));
         Wallet toWallet = Wallet.create("1235", Currency.getInstance("USD"));
@@ -267,7 +271,7 @@ class WalletControllerTest {
         when(walletService.getWalletById(fromWalletId)).thenReturn(fromWallet);
         when(walletService.getWalletById(toWalletId)).thenReturn(toWallet);
 
-        Transaction transaction = new Transaction(fromWallet, toWallet, amount);
+        Transaction transaction = new Transaction(fromWallet, toWallet, amount, amountCredited, exchangeRate);
         UUID transactionId = UUID.randomUUID();
 
         Transaction transactionSpy = Mockito.spy(transaction);
@@ -281,7 +285,9 @@ class WalletControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.fromWalletId").value(fromWallet.getId().toString()))
             .andExpect(jsonPath("$.toWalletId").value(toWallet.getId().toString()))
-            .andExpect(jsonPath("$.amount").value(amount.intValue()))
+            .andExpect(jsonPath("$.amountDebited").value(amount.intValue()))
+            .andExpect(jsonPath("$.amountCredited").value(amountCredited.intValue()))
+            .andExpect(jsonPath("$.exchangeRate").value(exchangeRate.intValue()))
             .andExpect(jsonPath("$.id").value(transactionId.toString()));
     }
 

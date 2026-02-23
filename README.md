@@ -265,7 +265,9 @@ Location: /api/v1/wallets/transactions/{transactionId}
   "id": "uuid",
   "fromWalletId": "uuid",
   "toWalletId": "uuid",
-  "amount": 50.00,
+  "amountDebited": 100,
+  "amountCredited": 100,
+  "exchangeRate": 1,
   "createdAt": "2026-02-12T14:03:22Z"
 }
 ```

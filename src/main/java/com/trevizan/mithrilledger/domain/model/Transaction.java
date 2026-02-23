@@ -30,7 +30,19 @@ public class Transaction {
     private Wallet toWallet;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal amount;
+    private BigDecimal amountDebited;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal amountCredited;
+
+    @Column(nullable = false)
+    private String fromCurrency;
+
+    @Column(nullable = false)
+    private String toCurrency;
+
+    @Column(precision = 19, scale = 6)
+    private BigDecimal exchangeRate;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -39,9 +51,19 @@ public class Transaction {
 
     }
 
-    public Transaction(Wallet fromWallet, Wallet toWallet, BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be positive.");
+    public Transaction(
+        Wallet fromWallet,
+        Wallet toWallet,
+        BigDecimal amountDebited,
+        BigDecimal amountCredited,
+        BigDecimal exchangeRate
+    ) {
+        if (amountDebited == null || amountDebited.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount debited must be positive.");
+        }
+
+        if (amountCredited == null || amountCredited.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount credited must be positive.");
         }
 
         if (fromWallet.equals(toWallet)) {
@@ -50,7 +72,11 @@ public class Transaction {
 
         this.fromWallet = fromWallet;
         this.toWallet = toWallet;
-        this.amount = amount;
+        this.amountDebited = amountDebited;
+        this.amountCredited = amountCredited;
+        this.fromCurrency = fromWallet.getCurrency().getCurrencyCode();
+        this.toCurrency = toWallet.getCurrency().getCurrencyCode();
+        this.exchangeRate = exchangeRate;
         this.createdAt = Instant.now();
     }
 
@@ -66,8 +92,24 @@ public class Transaction {
         return toWallet;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public BigDecimal getAmountDebited() {
+        return amountDebited;
+    }
+
+    public BigDecimal getAmountCredited() {
+        return amountCredited;
+    }
+
+    public String getFromCurrency() {
+        return fromCurrency;
+    }
+
+    public String getToCurrency() {
+        return toCurrency;
+    }
+
+    public BigDecimal getExchangeRate() {
+        return exchangeRate;
     }
 
     public Instant getCreatedAt() {

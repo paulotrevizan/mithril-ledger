@@ -8,6 +8,7 @@ import com.trevizan.mithrilledger.repository.TransactionRepository;
 import com.trevizan.mithrilledger.repository.WalletRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Currency;
 import java.util.UUID;
 
@@ -72,7 +73,8 @@ public class WalletService {
 
     @Transactional
     public Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount) {
-        BigDecimal amountToCredit = getAmountToCredit(fromWallet, toWallet, amount);
+        BigDecimal exchangeRate = getExchangeRate(fromWallet.getCurrency(), toWallet.getCurrency());
+        BigDecimal amountToCredit = amount.multiply(exchangeRate);
 
         fromWallet.debit(amount);
         toWallet.credit(amountToCredit);
@@ -80,33 +82,35 @@ public class WalletService {
         walletRepository.save(fromWallet);
         walletRepository.save(toWallet);
 
-        Transaction transaction = new Transaction(fromWallet, toWallet, amount);
+        Transaction transaction = new Transaction(
+            fromWallet,
+            toWallet,
+            amount,
+            amountToCredit,
+            exchangeRate
+        );
         transactionRepository.save(transaction);
 
-        log.info("Transfer executed: transactionId={}, fromWalletId={}, toWalletId={}, amount={}",
+        log.info(
+            "Transfer executed: transactionId={}, fromWalletId={}, toWalletId={}, amountDebited={}, amountCredited={}, fromCurrency={}, toCurrency={}",
             transaction.getId(),
             fromWallet.getId(),
             toWallet.getId(),
-            amount
+            amount,
+            amountToCredit,
+            fromWallet.getCurrency(),
+            toWallet.getCurrency()
         );
 
         return transaction;
     }
 
-    private BigDecimal getAmountToCredit(
-        Wallet fromWallet,
-        Wallet toWallet,
-        BigDecimal amount
-    ) {
-        if (fromWallet.getCurrency().equals(toWallet.getCurrency())) {
-            return amount;
+    private BigDecimal getExchangeRate(Currency fromCurrency, Currency toCurrency) {
+        if (fromCurrency.equals(toCurrency)) {
+            return BigDecimal.ONE;
         }
 
-        BigDecimal rate = exchangeClient.getRate(
-            fromWallet.getCurrency().getCurrencyCode(),
-            toWallet.getCurrency().getCurrencyCode()
-        );
-        return amount.multiply(rate);
+        return exchangeClient.getRate(fromCurrency.getCurrencyCode(), toCurrency.getCurrencyCode());
     }
 
 }
