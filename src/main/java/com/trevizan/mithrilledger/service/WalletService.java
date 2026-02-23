@@ -8,7 +8,6 @@ import com.trevizan.mithrilledger.repository.TransactionRepository;
 import com.trevizan.mithrilledger.repository.WalletRepository;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Currency;
 import java.util.UUID;
 

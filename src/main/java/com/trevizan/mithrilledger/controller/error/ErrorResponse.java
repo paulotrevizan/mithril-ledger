@@ -1,4 +1,4 @@
-package com.trevizan.mithrilledger.exception.api;
+package com.trevizan.mithrilledger.controller.error;
 
 import java.time.Instant;
 

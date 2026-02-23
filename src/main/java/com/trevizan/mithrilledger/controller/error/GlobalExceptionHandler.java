@@ -1,7 +1,9 @@
-package com.trevizan.mithrilledger.exception.api;
+package com.trevizan.mithrilledger.controller.error;
 
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
+import com.trevizan.mithrilledger.exception.infrastructure.ExchangeInvalidResponseException;
+import com.trevizan.mithrilledger.exception.infrastructure.ExchangeServiceUnavailableException;
 
 import java.time.Instant;
 
@@ -37,6 +39,22 @@ public class GlobalExceptionHandler {
         HttpServletRequest request
     ) {
         return buildErrorResponse(ex, HttpStatus.CONFLICT, request);
+    }
+
+    @ExceptionHandler(ExchangeServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleExchangeServiceUnavailableException(
+        ExchangeServiceUnavailableException ex,
+        HttpServletRequest request
+    ) {
+        return buildErrorResponse(ex, HttpStatus.SERVICE_UNAVAILABLE, request);
+    }
+
+    @ExceptionHandler(ExchangeInvalidResponseException.class)
+    public ResponseEntity<ErrorResponse> handleExchangeInvalidResponseException(
+        ExchangeInvalidResponseException ex,
+        HttpServletRequest request
+    ) {
+        return buildErrorResponse(ex, HttpStatus.SERVICE_UNAVAILABLE, request);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(
