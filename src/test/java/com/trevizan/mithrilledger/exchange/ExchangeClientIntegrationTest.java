@@ -2,6 +2,8 @@ package com.trevizan.mithrilledger.exchange;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.trevizan.mithrilledger.domain.exchange.ExchangeClient;
+import com.trevizan.mithrilledger.exception.infrastructure.ExchangeInvalidResponseException;
+import com.trevizan.mithrilledger.exception.infrastructure.ExchangeServiceUnavailableException;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -95,8 +97,7 @@ class ExchangeClientIntegrationTest {
         );
 
         Assertions.assertThatThrownBy(() -> exchangeClient.getRate("USD", "EUR"))
-            .isInstanceOf(RuntimeException.class)
-            .hasCauseInstanceOf(SocketTimeoutException.class);
+            .isInstanceOf(ExchangeServiceUnavailableException.class);
     }
 
     @Test
@@ -110,7 +111,7 @@ class ExchangeClientIntegrationTest {
         );
 
         Assertions.assertThatThrownBy(() -> exchangeClient.getRate("USD", "EUR"))
-            .isInstanceOf(HttpServerErrorException.class);
+            .isInstanceOf(ExchangeServiceUnavailableException.class);
 
         verify(3, getRequestedFor(
             urlPathEqualTo("/api/v1/exchanges/rates"))
@@ -129,12 +130,12 @@ class ExchangeClientIntegrationTest {
 
         for (int i = 0; i < 4; i++) {
             Assertions.assertThatThrownBy(() -> exchangeClient.getRate("USD", "EUR"))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(ExchangeServiceUnavailableException.class);
         }
 
         Assertions.assertThatThrownBy(() -> exchangeClient.getRate("USD", "EUR"))
-            .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("Exchange service unavailable");
+            .isInstanceOf(ExchangeServiceUnavailableException.class)
+            .hasMessageContaining("Circuit breaker is OPEN for exchange service");
 
         Assertions.assertThat(circuitBreaker.getState())
             .isEqualTo(CircuitBreaker.State.OPEN);
@@ -152,7 +153,7 @@ class ExchangeClientIntegrationTest {
 
         for (int i = 0; i < 4; i++) {
             Assertions.assertThatThrownBy(() -> exchangeClient.getRate("USD", "EUR"))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(ExchangeServiceUnavailableException.class);
         }
 
         Assertions.assertThat(circuitBreaker.getState())
