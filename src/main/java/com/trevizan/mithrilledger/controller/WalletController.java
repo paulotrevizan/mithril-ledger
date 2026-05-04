@@ -7,6 +7,7 @@ import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletResponse;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
+import com.trevizan.mithrilledger.infrastructure.idempotency.Idempotent;
 import com.trevizan.mithrilledger.service.WalletService;
 
 import java.math.BigDecimal;
@@ -86,6 +87,7 @@ public class WalletController {
     }
 
     @PostMapping("/transfer")
+    @Idempotent
     public ResponseEntity<TransactionResponse> transfer(@RequestBody TransferRequest request) {
         validateTransferRequest(request);
 

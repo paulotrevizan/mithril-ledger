@@ -78,6 +78,7 @@ class WalletApiTest {
     private void transfer(UUID fromWalletId, UUID toWalletId, BigDecimal amount) throws Exception {
         TransferRequest request = new TransferRequest(fromWalletId, toWalletId, amount);
         mockMvc.perform(post("/api/v1/wallets/transfer")
+                .header("Idempotency-Key", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated());
@@ -159,6 +160,7 @@ class WalletApiTest {
         TransferRequest request = new TransferRequest(fromWalletId, toWalletId, BigDecimal.valueOf(50.0));
 
         mockMvc.perform(post("/api/v1/wallets/transfer")
+                .header("Idempotency-Key", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isConflict())
