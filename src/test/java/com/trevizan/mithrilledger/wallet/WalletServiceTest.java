@@ -161,6 +161,7 @@ class WalletServiceTest {
         UUID fromId = fromWallet.getId();
         UUID toId = toWallet.getId();
         BigDecimal transferAmount = BigDecimal.valueOf(150);
+        String idempotencyKey = UUID.randomUUID().toString();
 
         when(walletRepository.findById(fromId)).thenReturn(Optional.of(fromWallet));
         when(walletRepository.findById(toId)).thenReturn(Optional.of(toWallet));
@@ -168,7 +169,7 @@ class WalletServiceTest {
         when(walletRepository.save(toWallet)).thenReturn(toWallet);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
 
-        Transaction transaction = walletService.transfer(fromWallet, toWallet, transferAmount);
+        Transaction transaction = walletService.transfer(fromWallet, toWallet, transferAmount, idempotencyKey);
 
         assertEquals(fromWallet, transaction.getFromWallet());
         assertEquals(toWallet, transaction.getToWallet());
@@ -178,7 +179,7 @@ class WalletServiceTest {
 
         verify(walletRepository, times(1)).save(fromWallet);
         verify(walletRepository, times(1)).save(toWallet);
-        verify(transactionRepository, times(1)).save(transaction);
+        verify(transactionRepository, times(1)).saveAndFlush(transaction);
     }
 
     @Test
@@ -188,11 +189,11 @@ class WalletServiceTest {
 
         fromWallet.credit(BigDecimal.valueOf(100));
 
-        assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, BigDecimal.ZERO))
+        assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, BigDecimal.ZERO, UUID.randomUUID().toString()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Amount must be greater than 0.");
 
-        assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, BigDecimal.valueOf(-50)))
+        assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, BigDecimal.valueOf(-50), UUID.randomUUID().toString()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Amount must be greater than 0.");
     }
@@ -202,7 +203,9 @@ class WalletServiceTest {
         Wallet wallet = Wallet.create("1234", Currency.getInstance("EUR"));
         wallet.credit(BigDecimal.valueOf(100));
 
-        assertThatThrownBy(() -> walletService.transfer(wallet, wallet, BigDecimal.valueOf(50)))
+        String idempotencyKey = UUID.randomUUID().toString();
+
+        assertThatThrownBy(() -> walletService.transfer(wallet, wallet, BigDecimal.valueOf(50), idempotencyKey))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Origin and Destination Wallet must be different.");
     }
@@ -214,8 +217,9 @@ class WalletServiceTest {
         fromWallet.credit(BigDecimal.valueOf(50));
 
         BigDecimal transferAmount = BigDecimal.valueOf(100);
+        String idempotencyKey = UUID.randomUUID().toString();
 
-        assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, transferAmount))
+        assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, transferAmount, idempotencyKey))
             .isInstanceOf(InsufficientBalanceException.class)
             .hasMessageContaining(fromWallet.getId().toString());
     }

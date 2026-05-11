@@ -196,6 +196,7 @@ class WalletControllerTest {
         UUID fromWalletId = UUID.randomUUID();
         UUID toWalletId = UUID.randomUUID();
         BigDecimal amount = BigDecimal.valueOf(50);
+        String idempotencyKey = UUID.randomUUID().toString();
 
         Wallet fromWallet = Wallet.create("1234", Currency.getInstance("EUR"));
         Wallet toWallet = Wallet.create("1235", Currency.getInstance("EUR"));
@@ -205,16 +206,16 @@ class WalletControllerTest {
         when(walletService.getWalletById(fromWalletId)).thenReturn(fromWallet);
         when(walletService.getWalletById(toWalletId)).thenReturn(toWallet);
 
-        Transaction transaction = new Transaction(fromWallet, toWallet, amount, amount, BigDecimal.ONE);
+        Transaction transaction = new Transaction(fromWallet, toWallet, amount, amount, BigDecimal.ONE, idempotencyKey);
         UUID transactionId = UUID.randomUUID();
 
         Transaction transactionSpy = Mockito.spy(transaction);
         doReturn(transactionId).when(transactionSpy).getId();
 
-        when(walletService.transfer(fromWallet, toWallet, amount)).thenReturn(transactionSpy);
+        when(walletService.transfer(fromWallet, toWallet, amount, idempotencyKey)).thenReturn(transactionSpy);
 
         mockMvc.perform(post("/api/v1/wallets/transfer")
-                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .header("Idempotency-Key", idempotencyKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -245,14 +246,15 @@ class WalletControllerTest {
         UUID fromWalletId = UUID.randomUUID();
         UUID toWalletId = UUID.randomUUID();
         BigDecimal amount = BigDecimal.valueOf(50);
+        String idempotencyKey = UUID.randomUUID().toString();
 
         TransferRequest request = new TransferRequest(fromWalletId, toWalletId, amount);
 
-        when(walletService.transfer(any(), any(), any()))
+        when(walletService.transfer(any(), any(), any(), any()))
             .thenThrow(new WalletNotFoundException(fromWalletId));
 
         mockMvc.perform(post("/api/v1/wallets/transfer")
-                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .header("Idempotency-Key", idempotencyKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound());
@@ -265,6 +267,7 @@ class WalletControllerTest {
         BigDecimal amount = BigDecimal.valueOf(50);
         BigDecimal amountCredited = BigDecimal.valueOf(54.5);
         BigDecimal exchangeRate = BigDecimal.valueOf(1.09);
+        String idempotencyKey = UUID.randomUUID().toString();
 
         Wallet fromWallet = Wallet.create("1234", Currency.getInstance("EUR"));
         Wallet toWallet = Wallet.create("1235", Currency.getInstance("USD"));
@@ -274,16 +277,23 @@ class WalletControllerTest {
         when(walletService.getWalletById(fromWalletId)).thenReturn(fromWallet);
         when(walletService.getWalletById(toWalletId)).thenReturn(toWallet);
 
-        Transaction transaction = new Transaction(fromWallet, toWallet, amount, amountCredited, exchangeRate);
+        Transaction transaction = new Transaction(
+            fromWallet,
+            toWallet,
+            amount,
+            amountCredited,
+            exchangeRate,
+            idempotencyKey
+        );
         UUID transactionId = UUID.randomUUID();
 
         Transaction transactionSpy = Mockito.spy(transaction);
         doReturn(transactionId).when(transactionSpy).getId();
 
-        when(walletService.transfer(fromWallet, toWallet, amount)).thenReturn(transactionSpy);
+        when(walletService.transfer(fromWallet, toWallet, amount, idempotencyKey)).thenReturn(transactionSpy);
 
         mockMvc.perform(post("/api/v1/wallets/transfer")
-                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .header("Idempotency-Key", idempotencyKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -306,8 +316,7 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/v1/wallets/transfer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$").value("Missing Idempotency-Key"));
+            .andExpect(status().isBadRequest());
 
         verifyNoInteractions(walletService);
     }

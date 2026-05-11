@@ -7,7 +7,6 @@ import com.trevizan.mithrilledger.controller.dto.WalletRequest;
 import com.trevizan.mithrilledger.controller.dto.WalletResponse;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
-import com.trevizan.mithrilledger.infrastructure.idempotency.Idempotent;
 import com.trevizan.mithrilledger.service.WalletService;
 
 import java.math.BigDecimal;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -87,14 +87,17 @@ public class WalletController {
     }
 
     @PostMapping("/transfer")
-    @Idempotent
-    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransferRequest request) {
-        validateTransferRequest(request);
+    public ResponseEntity<TransactionResponse> transfer(
+        @RequestBody TransferRequest request,
+        @RequestHeader("Idempotency-Key") String idempotencyKey
+    ) {
+        validateTransferRequest(request, idempotencyKey);
 
         Transaction transaction = walletService.transfer(
             walletService.getWalletById(request.fromWalletId()),
             walletService.getWalletById(request.toWalletId()),
-            request.amount()
+            request.amount(),
+            idempotencyKey
         );
 
         TransactionResponse response = TransactionResponse.from(transaction);
@@ -121,7 +124,7 @@ public class WalletController {
         }
     }
 
-    private void validateTransferRequest(TransferRequest request) {
+    private void validateTransferRequest(TransferRequest request, String idempotencyKey) {
         if (request.fromWalletId() == null) {
             throw new IllegalArgumentException("Origin Wallet ID is required.");
         }

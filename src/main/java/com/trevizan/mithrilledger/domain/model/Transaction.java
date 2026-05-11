@@ -47,6 +47,9 @@ public class Transaction {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(nullable = false, unique = true, updatable = false)
+    private String idempotencyKey;
+
     protected Transaction() {
 
     }
@@ -56,7 +59,8 @@ public class Transaction {
         Wallet toWallet,
         BigDecimal amountDebited,
         BigDecimal amountCredited,
-        BigDecimal exchangeRate
+        BigDecimal exchangeRate,
+        String idempotencyKey
     ) {
         if (amountDebited == null || amountDebited.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount debited must be positive.");
@@ -70,6 +74,10 @@ public class Transaction {
             throw new IllegalArgumentException("Origin and Destination Wallet must be different.");
         }
 
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("Idempotency key is required.");
+        }
+
         this.fromWallet = fromWallet;
         this.toWallet = toWallet;
         this.amountDebited = amountDebited;
@@ -78,6 +86,7 @@ public class Transaction {
         this.toCurrency = toWallet.getCurrency().getCurrencyCode();
         this.exchangeRate = exchangeRate;
         this.createdAt = Instant.now();
+        this.idempotencyKey = idempotencyKey;
     }
 
     public UUID getId() {
@@ -114,6 +123,10 @@ public class Transaction {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
     }
 
 }
