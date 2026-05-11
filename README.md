@@ -30,10 +30,10 @@ At its current stage, the system supports:
 - Controller-level validation
 - Controller tests with mocked services
 - Integration tests covering end-to-end HTTP flows
-- External integrations currently use basic resilience (retry + circuit breaker).
-
-> ⚠️ Idempotency and concurrency handling are **not implemented yet**.  
-> Planned work is tracked explicitly (see **Future Improvements**).
+- External integrations with basic resilience (retry + circuit breaker)
+- **Idempotency via DB unique constraint** — `Idempotency-Key` is stored on the `transactions` table with a `UNIQUE` constraint; duplicate inserts under concurrent load are rejected at the DB level
+- **Transfer endpoint requires `Idempotency-Key`** — currently enforced by controller request-header binding (`@RequestHeader("Idempotency-Key")`), so requests without the header fail with `400 Bad Request`
+- **Concurrency-safe transfers** — race conditions handled via optimistic DB constraint + independent recovery transaction (`REQUIRES_NEW`)
 
 ---
 
@@ -237,6 +237,12 @@ Transfers an amount from one wallet to another.
 }
 ```
 
+### Required Headers
+
+| Header            | Description                                                                 |
+|-------------------|-----------------------------------------------------------------------------|
+| `Idempotency-Key` | Unique client-generated key used to deduplicate transfer requests           |
+
 ### Validation Rules
 
 - `fromWalletId` must not be null
@@ -294,11 +300,11 @@ All errors are returned in a **consistent JSON format**.
 
 ### Common Error Scenarios
 
-| Status | Description                              |
-|--------|------------------------------------------|
-| 400    | Invalid or missing input                 |
-| 404    | Wallet not found                         |
-| 409    | Insufficient balance for debit operation |
+| Status | Description                                                        |
+|--------|--------------------------------------------------------------------|
+| 400    | Invalid or missing input, including missing `Idempotency-Key` on transfer |
+| 404    | Wallet not found                                                   |
+| 409    | Insufficient balance for debit operation                           |
 
 ---
 
@@ -335,9 +341,9 @@ DECISIONS.md
 > 🚫 Scope is intentionally controlled.  
 > Any new idea must be written here and **not implemented immediately**.
 
-- Ledger based balance model
-- Idempotency keys
-- Concurrency handling
+- **Centralized idempotency header enforcement (planned, not implemented yet)** — today the transfer endpoint validates `Idempotency-Key` in `WalletController` via `@RequestHeader`; future step is to move this into a single HTTP interceptor/filter for all mutating endpoints
+- **Dedicated idempotency table with `SELECT FOR UPDATE`** — replace the current optimistic exception-recovery approach with a standard fintech pattern: a separate `idempotency_keys` table where the key record is locked pessimistically before any side effects; together with a Redis short-circuit layer this forms the full dual idempotency model
+- **Ledger entity** — append-only event log for historical balance reconstruction and auditability; current `Transaction` entity is a stepping stone
 - Observability and metrics
 
 ---
