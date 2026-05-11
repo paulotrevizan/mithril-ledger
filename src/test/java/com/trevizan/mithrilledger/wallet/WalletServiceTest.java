@@ -8,6 +8,7 @@ import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
 import com.trevizan.mithrilledger.repository.TransactionRepository;
 import com.trevizan.mithrilledger.repository.WalletRepository;
 import com.trevizan.mithrilledger.service.WalletService;
+import com.trevizan.mithrilledger.service.WalletTransferExecutor;
 
 import java.math.BigDecimal;
 import java.util.Currency;
@@ -32,13 +33,15 @@ class WalletServiceTest {
     private WalletService walletService;
     private TransactionRepository transactionRepository;
     private ExchangeClient exchangeClient;
+    private WalletTransferExecutor walletTransferExecutor;
 
     @BeforeEach
     void setUp() {
         walletRepository = Mockito.mock(WalletRepository.class);
         transactionRepository = Mockito.mock(TransactionRepository.class);
         exchangeClient = Mockito.mock(ExchangeClient.class);
-        walletService = new WalletService(walletRepository, transactionRepository, exchangeClient);
+        walletTransferExecutor = new WalletTransferExecutor(walletRepository, transactionRepository, exchangeClient);
+        walletService = new WalletService(walletRepository, transactionRepository, walletTransferExecutor);
     }
 
     @Test
@@ -191,11 +194,11 @@ class WalletServiceTest {
 
         assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, BigDecimal.ZERO, UUID.randomUUID().toString()))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Amount must be greater than 0.");
+            .hasMessageContaining("Amount debited must be positive.");
 
         assertThatThrownBy(() -> walletService.transfer(fromWallet, toWallet, BigDecimal.valueOf(-50), UUID.randomUUID().toString()))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Amount must be greater than 0.");
+            .hasMessageContaining("Amount debited must be positive.");
     }
 
     @Test

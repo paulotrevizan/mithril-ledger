@@ -1,6 +1,5 @@
 package com.trevizan.mithrilledger.service;
 
-import com.trevizan.mithrilledger.domain.exchange.ExchangeClient;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
@@ -9,7 +8,6 @@ import com.trevizan.mithrilledger.repository.WalletRepository;
 
 import java.math.BigDecimal;
 import java.util.Currency;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -25,16 +23,16 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final ExchangeClient exchangeClient;
+    private final WalletTransferExecutor walletTransferExecutor;
 
     public WalletService(
         WalletRepository walletRepository,
         TransactionRepository transactionRepository,
-        ExchangeClient exchangeClient
+        WalletTransferExecutor walletTransferExecutor
     ) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-        this.exchangeClient = exchangeClient;
+        this.walletTransferExecutor = walletTransferExecutor;
     }
 
     @Transactional
@@ -72,59 +70,19 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
 
-    @Transactional
     public Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount, String idempotencyKey) {
-        Optional<Transaction> existing = transactionRepository.findByIdempotencyKey(idempotencyKey);
-        if (existing.isPresent()) {
-            return existing.get();
-        }
-
-        BigDecimal exchangeRate = getExchangeRate(fromWallet.getCurrency(), toWallet.getCurrency());
-        BigDecimal amountToCredit = amount.multiply(exchangeRate);
-
-        fromWallet.debit(amount);
-        toWallet.credit(amountToCredit);
-
-        walletRepository.save(fromWallet);
-        walletRepository.save(toWallet);
-
-        Transaction transaction = new Transaction(
-            fromWallet,
-            toWallet,
-            amount,
-            amountToCredit,
-            exchangeRate,
-            idempotencyKey
-        );
-
         try {
-            transactionRepository.saveAndFlush(transaction);
-
-            log.info(
-                "Transfer executed: transactionId={}, fromWalletId={}, toWalletId={}, amountDebited={}, amountCredited={}, fromCurrency={}, toCurrency={}",
-                transaction.getId(),
-                fromWallet.getId(),
-                toWallet.getId(),
+            return walletTransferExecutor.execute(
+                fromWallet,
+                toWallet,
                 amount,
-                amountToCredit,
-                fromWallet.getCurrency(),
-                toWallet.getCurrency()
+                idempotencyKey
             );
-
-            return transaction;
         } catch (DataIntegrityViolationException e) {
             return transactionRepository
-                .findByIdempotencyKey(idempotencyKey)
+                .findByIdempotencyKeyInNewTransaction(idempotencyKey)
                 .orElseThrow(() -> e);
         }
-    }
-
-    private BigDecimal getExchangeRate(Currency fromCurrency, Currency toCurrency) {
-        if (fromCurrency.equals(toCurrency)) {
-            return BigDecimal.ONE;
-        }
-
-        return exchangeClient.getRate(fromCurrency.getCurrencyCode(), toCurrency.getCurrencyCode());
     }
 
 }
