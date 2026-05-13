@@ -91,7 +91,7 @@ public class WalletController {
         @RequestBody TransferRequest request,
         @RequestHeader("Idempotency-Key") String idempotencyKey
     ) {
-        validateTransferRequest(request, idempotencyKey);
+        validateTransferRequest(request);
 
         Transaction transaction = walletService.transfer(
             walletService.getWalletById(request.fromWalletId()),
@@ -124,7 +124,7 @@ public class WalletController {
         }
     }
 
-    private void validateTransferRequest(TransferRequest request, String idempotencyKey) {
+    private void validateTransferRequest(TransferRequest request) {
         if (request.fromWalletId() == null) {
             throw new IllegalArgumentException("Origin Wallet ID is required.");
         }
