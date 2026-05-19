@@ -1,5 +1,6 @@
 package com.trevizan.mithrilledger.service;
 
+import com.trevizan.mithrilledger.domain.model.LedgerType;
 import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
@@ -23,15 +24,18 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final LedgerService ledgerService;
     private final WalletTransferExecutor walletTransferExecutor;
 
     public WalletService(
         WalletRepository walletRepository,
         TransactionRepository transactionRepository,
+        LedgerService ledgerService,
         WalletTransferExecutor walletTransferExecutor
     ) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.ledgerService = ledgerService;
         this.walletTransferExecutor = walletTransferExecutor;
     }
 
@@ -60,6 +64,14 @@ public class WalletService {
     public Wallet credit(UUID walletId, BigDecimal amount) {
         Wallet wallet = getWalletById(walletId);
         wallet.credit(amount);
+
+        ledgerService.persistWalletEntry(
+            wallet.getId(),
+            LedgerType.CREDIT,
+            amount,
+            wallet.getCurrency()
+        );
+
         return walletRepository.save(wallet);
     }
 
@@ -67,6 +79,14 @@ public class WalletService {
     public Wallet debit(UUID walletId, BigDecimal amount) {
         Wallet wallet = getWalletById(walletId);
         wallet.debit(amount);
+
+        ledgerService.persistWalletEntry(
+            wallet.getId(),
+            LedgerType.DEBIT,
+            amount,
+            wallet.getCurrency()
+        );
+
         return walletRepository.save(wallet);
     }
 

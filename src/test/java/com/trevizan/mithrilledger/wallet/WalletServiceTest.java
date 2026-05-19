@@ -5,8 +5,10 @@ import com.trevizan.mithrilledger.domain.model.Transaction;
 import com.trevizan.mithrilledger.domain.model.Wallet;
 import com.trevizan.mithrilledger.exception.domain.InsufficientBalanceException;
 import com.trevizan.mithrilledger.exception.domain.WalletNotFoundException;
+import com.trevizan.mithrilledger.repository.LedgerRepository;
 import com.trevizan.mithrilledger.repository.TransactionRepository;
 import com.trevizan.mithrilledger.repository.WalletRepository;
+import com.trevizan.mithrilledger.service.LedgerService;
 import com.trevizan.mithrilledger.service.WalletService;
 import com.trevizan.mithrilledger.service.WalletTransferExecutor;
 
@@ -32,6 +34,8 @@ class WalletServiceTest {
     private WalletRepository walletRepository;
     private WalletService walletService;
     private TransactionRepository transactionRepository;
+    private LedgerRepository ledgerRepository;
+    private LedgerService ledgerService;
     private ExchangeClient exchangeClient;
     private WalletTransferExecutor walletTransferExecutor;
 
@@ -39,9 +43,11 @@ class WalletServiceTest {
     void setUp() {
         walletRepository = Mockito.mock(WalletRepository.class);
         transactionRepository = Mockito.mock(TransactionRepository.class);
+        ledgerRepository = Mockito.mock(LedgerRepository.class);
+        ledgerService = new LedgerService(ledgerRepository);
         exchangeClient = Mockito.mock(ExchangeClient.class);
-        walletTransferExecutor = new WalletTransferExecutor(walletRepository, transactionRepository, exchangeClient);
-        walletService = new WalletService(walletRepository, transactionRepository, walletTransferExecutor);
+        walletTransferExecutor = new WalletTransferExecutor(walletRepository, transactionRepository, ledgerService, exchangeClient);
+        walletService = new WalletService(walletRepository, transactionRepository, ledgerService, walletTransferExecutor);
     }
 
     @Test

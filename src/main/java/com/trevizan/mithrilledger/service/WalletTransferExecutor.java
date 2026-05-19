@@ -21,15 +21,18 @@ public class WalletTransferExecutor {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final LedgerService ledgerService;
     private final ExchangeClient exchangeClient;
 
     public WalletTransferExecutor(
         WalletRepository walletRepository,
         TransactionRepository transactionRepository,
+        LedgerService ledgerService,
         ExchangeClient exchangeClient
     ) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.ledgerService = ledgerService;
         this.exchangeClient = exchangeClient;
     }
 
@@ -53,6 +56,16 @@ public class WalletTransferExecutor {
         );
 
         transactionRepository.saveAndFlush(transaction);
+
+        ledgerService.persistTransferEntries(
+            fromWallet.getId(),
+            toWallet.getId(),
+            transaction.getId(),
+            amount,
+            fromWallet.getCurrency(),
+            amountToCredit,
+            toWallet.getCurrency()
+        );
 
         fromWallet.debit(amount);
         toWallet.credit(amountToCredit);

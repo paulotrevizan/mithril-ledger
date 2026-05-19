@@ -25,13 +25,23 @@
     - safe and explicit error handling without exposing internal exceptions
 
 ### Transfer operation
-- **Decision:** implement transfer in `WalletService` as debit and credit operation.
-- **Rationale:** transfer between two wallets; domain invariants remain in `Wallet`.
+- **Decision:** keep transfer orchestration in `WalletService`, with atomic execution in `WalletTransferExecutor` (transaction boundary), including debit and credit operations.
+- **Rationale:** transfer coordinates multiple aggregates and persistence concerns; domain invariants remain enforced in `Wallet`.
 - **Trade-off:** 
-  - service coordinates multiple wallets 
+  - service layer coordinates multiple wallets and a transaction record
   - domain still enforces balance rules
-  - `@Transactional` ensures atomicity;
+  - `@Transactional` boundary in executor ensures atomicity
   - persist `Transaction` entity for traceability.
+
+### Ledger persistence model
+- **Decision:** persist append-only `Ledger` entries for credit, debit, and transfer operations.
+- **Rationale:** ledger rows provide auditability and historical reconstruction independent from current wallet balance.
+- **Trade-off:** adds write amplification (extra rows on each mutation), but improves traceability and financial observability.
+
+### Ledger write abstraction
+- **Decision:** centralize ledger writes in `LedgerService` instead of injecting `LedgerRepository` directly into both `WalletService` and `WalletTransferExecutor`.
+- **Rationale:** keeps services focused on orchestration/use-case flow while one component owns ledger persistence shape.
+- **Trade-off:** one extra service class, but less duplication and cleaner dependency graph.
 
 ### Exception strategy
 - **Decision:** use a domain-specific exception (`InsufficientBalanceException`) for debit violations.
